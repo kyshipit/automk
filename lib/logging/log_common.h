@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "../safety/system_errors.h"  // Correct relative path
 
 // Log level definitions (aligned with automotive safety requirements)
 typedef enum {
@@ -91,13 +92,77 @@ _Static_assert(LOG_BUFFER_CAPACITY == 64, "Buffer capacity must be 64 entries");
 
 // Common helper function declarations
 uint16_t log_calculate_checksum(const log_entry_binary_t* entry);
-int log_verify_entry_integrity(const log_entry_binary_t* entry);
-int log_buffer_put(log_buffer_t* buffer, const log_entry_binary_t* entry);
-int log_buffer_get(log_buffer_t* buffer, log_entry_binary_t* entry);
+system_error_t log_verify_entry_integrity(const log_entry_binary_t* entry);
+system_error_t log_buffer_put(log_buffer_t* buffer, const log_entry_binary_t* entry);
+system_error_t log_buffer_get(log_buffer_t* buffer, log_entry_binary_t* entry);
 
 // Safety verification macros
 #define LOG_VERIFY_LEVEL(level) ((level) < LOG_LEVEL_COUNT)
 #define LOG_VERIFY_TAG(tag) ((tag) < LOG_TAG_COUNT)
 #define LOG_VERIFY_MESSAGE(msg) ((msg) < LOG_MSG_COUNT)
+
+// Unified safety check macros with consistent error handling
+#define LOG_SAFETY_CHECK_LEVEL(level) \
+    do { \
+        if ((level) >= LOG_LEVEL_COUNT) { \
+            return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SYSTEM, \
+                                     ERROR_SEVERITY_HIGH, MODULE_ID_LOGGING); \
+        } \
+    } while(0)
+
+#define LOG_SAFETY_CHECK_TAG(tag_id) \
+    do { \
+        if ((tag_id) >= LOG_TAG_COUNT) { \
+            return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SYSTEM, \
+                                     ERROR_SEVERITY_HIGH, MODULE_ID_LOGGING); \
+        } \
+    } while(0)
+
+#define LOG_SAFETY_CHECK_MESSAGE_ID(msg_id) \
+    do { \
+        if ((msg_id) >= LOG_MSG_COUNT) { \
+            return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SYSTEM, \
+                                     ERROR_SEVERITY_HIGH, MODULE_ID_LOGGING); \
+        } \
+    } while(0)
+
+// Unified configuration constants for logging system
+#define LOG_CONFIG_BUFFER_CAPACITY          64      // Maximum entries in buffer
+#define LOG_CONFIG_IPC_TIMEOUT_MS          1000     // IPC communication timeout
+#define LOG_CONFIG_IPC_MAX_RETRIES           2      // Maximum IPC retry attempts
+#define LOG_CONFIG_CHECKSUM_VERIFY           1      // Enable checksum verification
+#define LOG_CONFIG_BOUNDARY_CHECK            1      // Enable boundary checking
+#define LOG_CONFIG_SAFETY_LEVEL              2      // Safety level (0-3)
+
+// Configuration structure for runtime adjustments
+/**
+ * @brief Logging system configuration structure
+ * 
+ * Centralized configuration management for logging system
+ */
+typedef struct {
+    uint16_t buffer_capacity;          // Buffer capacity in entries
+    uint16_t entry_size;               // Size of each log entry
+    uint32_t ipc_timeout_ms;           // IPC communication timeout
+    uint8_t  max_retry_count;          // Maximum retry attempts
+    uint16_t checksum_algorithm;       // Checksum algorithm identifier
+    uint8_t  safety_level;             // Safety compliance level
+} log_config_t;
+
+// Default configuration values (use correct member names)
+#define LOG_CONFIG_DEFAULT { \
+    .buffer_capacity = LOG_CONFIG_BUFFER_CAPACITY, \
+    .entry_size = sizeof(log_entry_binary_t), \
+    .ipc_timeout_ms = LOG_CONFIG_IPC_TIMEOUT_MS, \
+    .max_retry_count = LOG_CONFIG_IPC_MAX_RETRIES, \
+    .checksum_algorithm = 1, \
+    .safety_level = LOG_CONFIG_SAFETY_LEVEL \
+}
+
+// Configuration management functions
+system_error_t log_config_init(log_config_t* config);
+system_error_t log_config_validate(const log_config_t* config);
+system_error_t log_config_set(const log_config_t* new_config);
+system_error_t log_config_get(log_config_t* current_config);
 
 #endif // LOG_COMMON_H

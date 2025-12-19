@@ -28,31 +28,6 @@
 #define MAX_LOG_TAG_ID (LOG_TAG_COUNT - 1)
 #define MAX_LOG_MESSAGE_ID (LOG_MSG_COUNT - 1)
 
-// Unified safety check macros with consistent error handling
-#define LOG_SAFETY_CHECK_LEVEL(level) \
-    do { \
-        if ((level) >= LOG_LEVEL_COUNT) { \
-            return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SYSTEM, \
-                                     ERROR_SEVERITY_HIGH, MODULE_ID_LOGGING); \
-        } \
-    } while(0)
-
-#define LOG_SAFETY_CHECK_TAG(tag_id) \
-    do { \
-        if ((tag_id) >= LOG_TAG_COUNT) { \
-            return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SYSTEM, \
-                                     ERROR_SEVERITY_HIGH, MODULE_ID_LOGGING); \
-        } \
-    } while(0)
-
-#define LOG_SAFETY_CHECK_MESSAGE_ID(msg_id) \
-    do { \
-        if ((msg_id) >= LOG_MSG_COUNT) { \
-            return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SYSTEM, \
-                                     ERROR_SEVERITY_HIGH, MODULE_ID_LOGGING); \
-        } \
-    } while(0)
-
 // Enhanced API with explicit error reporting (using unified system errors)
 system_error_t log_system_init_safe(void);
 system_error_t log_record_binary_safe(uint8_t level, uint8_t tag_id, uint16_t message_id, 

@@ -8,8 +8,12 @@
 
 #include "logger_client.h"
 #include "../libsyscall/libsyscalls.h"
-#include "../../services/logger/logger_service.h"
+#include "log_common.h"  // Use common logging definitions instead of service header
+#include "log_ipc.h"     // Use IPC module for communication
 #include <string.h>
+
+// Remove hardcoded service PID and use dynamic discovery
+#define LOGGER_SERVICE_NAME "system/logger"
 
 /**
  * @brief Initialize logger client
@@ -34,22 +38,30 @@ system_error_t logger_client_init(void) {
  */
 system_error_t logger_client_send_entry(uint8_t level, uint8_t tag_id, uint16_t message_id, 
                                        uint32_t data1, uint32_t data2) {
-    // Parameter validation
-    if (level >= LOGGER_SERVICE_LEVEL_COUNT) {
+    // Parameter validation using common definitions
+    if (!LOG_VERIFY_LEVEL(level)) {
         return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SYSTEM,
                                  ERROR_SEVERITY_MEDIUM, MODULE_ID_LOGGING);
     }
     
-    // Create service-compatible log entry
-    logger_service_entry_t entry;
+    // Use common log entry structure instead of service-specific one
+    log_entry_binary_t entry;
     uint64_t timestamp;
     system_error_t time_result = sys_time_get_us(&timestamp);
     if (time_result.error_code != ERR_BASE_OK) {
         return time_result;
     }
     
+    // Get current PID - CORRECTED: sys_getpid requires pointer parameter
+    uint16_t current_pid = 0;
+    system_error_t pid_result = sys_getpid(&current_pid);
+    if (pid_result.error_code != ERR_BASE_OK) {
+        return pid_result;
+    }
+    
+    // Create log entry using common structure
     entry.timestamp = (uint32_t)timestamp;
-    entry.process_id = sys_getpid();
+    entry.process_id = current_pid;  // Use correct PID value
     entry.level = level;
     entry.tag_id = tag_id;
     entry.message_id = message_id;
@@ -57,25 +69,18 @@ system_error_t logger_client_send_entry(uint8_t level, uint8_t tag_id, uint16_t 
     entry.data[1] = data2;
     entry.checksum = 0; // Will be calculated
     
-    // Calculate checksum
-    const uint8_t* data = (const uint8_t*)&entry;
-    uint32_t checksum = 0;
-    for (size_t i = 0; i < (sizeof(logger_service_entry_t) - sizeof(entry.checksum)); i++) {
-        checksum += data[i];
+    // Calculate checksum using common function instead of manual calculation
+    entry.checksum = log_calculate_checksum(&entry);
+    
+    // Use IPC module for communication instead of direct service communication
+    int result = log_send_entry_ipc(&entry);
+    if (result != 0) {
+        return system_error_create(ERR_SYS_IPC_FAILED, ERROR_CATEGORY_SYSTEM,
+                                 ERROR_SEVERITY_HIGH, MODULE_ID_LOGGING);
     }
-    entry.checksum = (uint16_t)checksum;
     
-    // Create service message
-    logger_msg_entry_t msg;
-    msg.type = LOGGER_MSG_LOG_ENTRY;
-    msg.source_pid = sys_getpid();
-    msg.entry = entry;
-    
-    // Send to logger service
-    uint16_t logger_pid = LOGGER_SERVICE_PID; // Service discovery
-    system_error_t send_result = sys_ipc_send(logger_pid, &msg, sizeof(msg));
-    
-    return send_result;
+    return system_error_create(ERR_BASE_OK, ERROR_CATEGORY_SYSTEM,
+                             ERROR_SEVERITY_LOW, MODULE_ID_LOGGING);
 }
 
 /**
@@ -84,14 +89,15 @@ system_error_t logger_client_send_entry(uint8_t level, uint8_t tag_id, uint16_t 
  * @return system_error_t Service status
  */
 system_error_t logger_client_get_status(void) {
-    // Create status request
-    logger_msg_status_t msg;
-    msg.type = LOGGER_MSG_BUFFER_STATUS;
-    msg.requester_pid = sys_getpid();
+    // Use IPC module for status query instead of direct service communication
+    log_ipc_response_status_t status;
+    int result = log_query_status_ipc(&status);
     
-    // Send to logger service
-    uint16_t logger_pid = LOGGER_SERVICE_PID;
-    system_error_t send_result = sys_ipc_send(logger_pid, &msg, sizeof(msg));
+    if (result != 0) {
+        return system_error_create(ERR_SYS_IPC_FAILED, ERROR_CATEGORY_SYSTEM,
+                                 ERROR_SEVERITY_MEDIUM, MODULE_ID_LOGGING);
+    }
     
-    return send_result;
+    return system_error_create(ERR_BASE_OK, ERROR_CATEGORY_SYSTEM,
+                             ERROR_SEVERITY_LOW, MODULE_ID_LOGGING);
 }

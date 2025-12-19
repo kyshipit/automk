@@ -90,6 +90,7 @@ _Static_assert(sizeof(log_ipc_response_retrieve_t) == (4 + 16 * 20),
 #define LOG_TOPIC_DEBUG_LOGS         "log/debug"
 
 // Function declarations for IPC integration
+// Ensure these function declarations are available for client use
 int log_send_entry_ipc(const log_entry_binary_t* entry);
 int log_query_status_ipc(log_ipc_response_status_t* status);
 int log_retrieve_entries_ipc(uint8_t level_filter, uint8_t max_entries, 
