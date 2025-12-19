@@ -1,0 +1,45 @@
+# AutoMLOS Format String Database - 术语修正版
+# Format: message_id|format_string|description
+
+# 传统系统消息 (0-9)
+0|System started at timestamp %u|System startup message
+1|System shutdown at timestamp %u|System shutdown message  
+2|Service %u ready|Service initialization complete message
+3|Service %u error: code %u|Service error message
+4|Driver %u timeout after %u ms|Driver timeout message
+5|Driver %u initialized successfully|Driver initialization message
+
+# AI推理消息 (10-19)
+10|AI model switched: from %u to %u|AI model dynamic switching message
+11|AI pipeline state changed: stage %u, status %u|AI pipeline state transition message
+12|Multi-modal fusion completed: sources %u, confidence %u|Multi-sensor data fusion message
+13|Model performance adapted: old_latency %u ms, new_latency %u ms|AI model performance adaptation message
+14|Inference QoS adjusted: target %u%%, actual %u%%|AI service quality adjustment message
+
+# 安全监控消息 (20-29)
+20|Service graceful restart: pid %u, reason %u|Service controlled restart message
+21|Fault recovery state: from %u to %u|Fault recovery state transition message  
+22|System health assessment: score %u, trend %u|Dynamic health evaluation message
+23|Resource isolation triggered: service %u, level %u|Service isolation for safety message
+24|Safety monitor intervention: type %u, severity %u|Safety framework intervention message
+
+# 动态资源管理消息 (30-39)
+30|Service instance scaled: from %u to %u instances|Service dynamic scaling message
+31|Compute resource allocated: service %u, cores %u|Dynamic resource allocation message
+32|QoS policy updated: service %u, policy %u|Quality of service adjustment message
+33|Load balancing triggered: source %u, target %u|Load distribution change message
+34|Energy mode transition: from %u to %u|Power management state change message
+
+# 跨域协同消息 (40-49)
+40|Cross-service decision: services %u, consensus %u|Multi-service collaborative decision message
+41|Distributed state sync: domain %u, version %u|Distributed state synchronization message
+42|Fault tolerance activated: mechanism %u, level %u|Fault tolerance mechanism trigger message
+43|Data consistency message: partition %u, status %u|Data consistency management message
+44|Coordination protocol: phase %u, participants %u|Inter-service coordination message
+
+# 诊断与调试消息 (50-59)
+50|Diagnostic message: code %u, severity %u|Diagnostic message
+51|Heartbeat from process %u|Heartbeat monitoring message
+52|Performance profiling: service %u, metric %u|Performance measurement message
+53|Debug trace: component %u, detail %u|Development debugging message
+54|Configuration update: section %u, version %u|Runtime configuration change message
