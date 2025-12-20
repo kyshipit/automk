@@ -548,3 +548,66 @@ void log_record_binary(uint8_t level, uint8_t tag_id, uint16_t message_id,
         // Use minimal error logging (no recursion)
     }
 }
+
+/**
+ * @brief Create a log entry with comprehensive safety validation
+ * 
+ * Creates a log entry with current timestamp and process ID, including
+ * parameter validation and checksum calculation.
+ * 
+ * @param entry Pointer to store the created log entry
+ * @param level Log level (must be < LOG_LEVEL_COUNT)
+ * @param tag_id Tag identifier (must be < LOG_TAG_COUNT)
+ * @param message_id Message identifier (must be < LOG_MSG_COUNT)
+ * @param data1 First data payload
+ * @param data2 Second data payload
+ * @return system_error_t Error code indicating operation status
+ */
+system_error_t log_create_entry(log_entry_binary_t* entry, uint8_t level, uint8_t tag_id, 
+                               uint16_t message_id, uint32_t data1, uint32_t data2) {
+    // Safety: Null pointer validation
+    if (entry == NULL) {
+        return system_error_create(ERR_SAFE_CRITICAL_NULL, ERROR_CATEGORY_SAFETY,
+                                 ERROR_SEVERITY_CRITICAL, MODULE_ID_LOGGING);
+    }
+    
+    // Parameter validation using safety macros
+    LOG_SAFETY_CHECK_LEVEL(level);
+    LOG_SAFETY_CHECK_TAG(tag_id);
+    LOG_SAFETY_CHECK_MESSAGE_ID(message_id);
+    
+    // Get current process ID
+    uint16_t current_pid = 0;
+    system_error_t pid_result = sys_getpid(&current_pid);
+    if (pid_result.error_code != ERR_BASE_OK) {
+        return pid_result;
+    }
+    
+    // Get current timestamp
+    uint64_t timestamp = 0;
+    system_error_t time_result = sys_time_get_us(&timestamp);
+    if (time_result.error_code != ERR_BASE_OK) {
+        return time_result;
+    }
+    
+    // Create log entry structure
+    log_entry_binary_t new_entry = {
+        .timestamp = (uint32_t)timestamp,
+        .process_id = current_pid,
+        .level = level,
+        .tag_id = tag_id,
+        .message_id = message_id,
+        .data[0] = data1,
+        .data[1] = data2,
+        .checksum = 0
+    };
+    
+    // Calculate checksum for entry integrity
+    new_entry.checksum = log_calculate_checksum(&new_entry);
+    
+    // Copy the created entry to output parameter
+    memcpy(entry, &new_entry, sizeof(log_entry_binary_t));
+    
+    return system_error_create(ERR_BASE_OK, ERROR_CATEGORY_SUCCESS,
+                             ERROR_SEVERITY_NONE, MODULE_ID_LOGGING);
+}

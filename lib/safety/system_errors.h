@@ -55,6 +55,8 @@ typedef enum {
     ERR_SYS_CONFIG_ERROR,                // System configuration error
     ERR_SYS_SERVICE_NOT_FOUND,           // System service not found
     ERR_SYS_SERVICE_REG_FAILED,          // System service registration failed
+    ERR_SYS_IPC_FAILED,                  // System IPC communication failed
+    ERR_SYS_NOT_INITIALIZED,             // System component not initialized
     ERR_SYS_COUNT
 } err_sys_t;
 

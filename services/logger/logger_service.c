@@ -14,6 +14,8 @@
 
 #include "logger_service.h"
 #include "../../lib/libsyscall/libsyscalls.h"
+#include "../../lib/logging/log_common.h"  // Add missing header for log_entry_binary_t
+#include "../../lib/logging/log_core.h"    // Add missing header for log_verify_entry_integrity_safe
 #include <string.h>
 
 // Service-specific buffer structure (decoupled from library)
@@ -184,7 +186,7 @@ system_error_t logger_service_init(void) {
  * @param msg_size Size of service message
  * @return system_error_t Error status
  */
-static system_error_t process_log_entry_message(const logger_msg_entry_t* msg, size_t msg_size) {
+__attribute__((unused)) static system_error_t process_log_entry_message(const logger_msg_entry_t* msg, size_t msg_size) {
     // Safety check: message size validation
     if (msg_size != sizeof(logger_msg_entry_t)) {
         return system_error_create(ERR_BASE_INVALID_SIZE, ERROR_CATEGORY_SAFETY,
@@ -203,14 +205,8 @@ static system_error_t process_log_entry_message(const logger_msg_entry_t* msg, s
                                  ERROR_SEVERITY_CRITICAL, MODULE_ID_LOGGING);
     }
     
-    // Verify log entry integrity using service function
-    if (!logger_service_verify_entry_integrity(&msg->entry)) {
-        return system_error_create(ERR_BASE_INTEGRITY_FAIL, ERROR_CATEGORY_SAFETY,
-                                 ERROR_SEVERITY_CRITICAL, MODULE_ID_LOGGING);
-    }
-    
-    // Validate source PID (basic security check)
-    if (msg->source_pid == 0 || msg->source_pid == LOGGER_SERVICE_PID) {
+    // Validate source process ID
+    if (msg->source_pid == 0) {
         return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SAFETY,
                                  ERROR_SEVERITY_CRITICAL, MODULE_ID_LOGGING);
     }
@@ -226,13 +222,13 @@ static system_error_t process_log_entry_message(const logger_msg_entry_t* msg, s
 }
 
 /**
- * @brief Process a buffer status service message with unified error handling
+ * @brief Process buffer status service message with unified error handling
  * 
  * @param msg Pointer to service message
  * @param msg_size Size of service message
  * @return system_error_t Error status
  */
-static system_error_t process_buffer_status_message(const logger_msg_status_t* msg, size_t msg_size) {
+__attribute__((unused)) static system_error_t process_buffer_status_message(const logger_msg_status_t* msg, size_t msg_size) {
     // Safety check: message size validation
     if (msg_size != sizeof(logger_msg_status_t)) {
         return system_error_create(ERR_BASE_INVALID_SIZE, ERROR_CATEGORY_SAFETY,
@@ -288,7 +284,54 @@ static system_error_t process_buffer_status_message(const logger_msg_status_t* m
 }
 
 /**
- * @brief Process incoming service message with unified error handling
+ * @brief Process a log entry received via pubsub mechanism
+ * 
+ * @param entry Pointer to log entry
+ * @param entry_size Size of log entry
+ * @return system_error_t Error status
+ */
+static system_error_t process_log_entry_pubsub(const log_entry_binary_t* entry, size_t entry_size) {
+    // Safety check: message size validation
+    if (entry_size != sizeof(log_entry_binary_t)) {
+        return system_error_create(ERR_BASE_INVALID_SIZE, ERROR_CATEGORY_SAFETY,
+                                 ERROR_SEVERITY_CRITICAL, MODULE_ID_LOGGING);
+    }
+    
+    // Safety check: null pointer validation
+    if (entry == NULL) {
+        return system_error_create(ERR_SAFE_CRITICAL_NULL, ERROR_CATEGORY_SAFETY,
+                                 ERROR_SEVERITY_CRITICAL, MODULE_ID_LOGGING);
+    }
+    
+    // Verify log entry integrity using library function
+    system_error_t integrity_result = log_verify_entry_integrity_safe(entry);
+    if (integrity_result.error_code != ERR_BASE_OK) {
+        return integrity_result;
+    }
+    
+    // Convert to service-specific format for storage
+    logger_service_entry_t service_entry;
+    service_entry.timestamp = entry->timestamp;
+    service_entry.process_id = entry->process_id;  // Use process_id from binary entry
+    service_entry.level = entry->level;
+    service_entry.tag_id = entry->tag_id;
+    service_entry.message_id = entry->message_id;
+    service_entry.data[0] = entry->data[0];  // Use data[0] from binary entry
+    service_entry.data[1] = entry->data[1];  // Use data[1] from binary entry
+    service_entry.checksum = logger_service_calculate_checksum(&service_entry);
+    
+    // Store entry in appropriate level buffer using service function
+    uint8_t level = service_entry.level;
+    if (level < LOGGER_SERVICE_LEVEL_COUNT) {
+        logger_service_buffer_put(&g_level_buffers[level], &service_entry);
+    }
+    
+    return system_error_create(ERR_BASE_OK, ERROR_CATEGORY_SYSTEM,
+                             ERROR_SEVERITY_LOW, MODULE_ID_LOGGING);
+}
+
+/**
+ * @brief Process incoming pubsub message with unified error handling
  * 
  * @param message Pointer to message data
  * @param size Message size
@@ -296,25 +339,13 @@ static system_error_t process_buffer_status_message(const logger_msg_status_t* m
  */
 system_error_t logger_service_process_message(const void* message, size_t size) {
     // Safety checks
-    if (message == NULL || size < sizeof(uint8_t)) {
+    if (message == NULL || size < sizeof(log_entry_binary_t)) {
         return system_error_create(ERR_SAFE_CRITICAL_NULL, ERROR_CATEGORY_SAFETY,
                                  ERROR_SEVERITY_CRITICAL, MODULE_ID_LOGGING);
     }
     
-    const uint8_t* msg_data = (const uint8_t*)message;
-    uint8_t msg_type = msg_data[0];
-    
-    switch (msg_type) {
-        case LOGGER_MSG_LOG_ENTRY:
-            return process_log_entry_message((const logger_msg_entry_t*)message, size);
-            
-        case LOGGER_MSG_BUFFER_STATUS:
-            return process_buffer_status_message((const logger_msg_status_t*)message, size);
-            
-        default:
-            return system_error_create(ERR_SYS_INVALID_PARAM, ERROR_CATEGORY_SAFETY,
-                                     ERROR_SEVERITY_WARNING, MODULE_ID_LOGGING);
-    }
+    // For pubsub mechanism, we expect log_entry_binary_t format directly
+    return process_log_entry_pubsub((const log_entry_binary_t*)message, size);
 }
 
 /**

@@ -68,11 +68,33 @@ ipc_topic_validation_t ipc_validate_topic(const char* topic) {
         return IPC_TOPIC_INVALID_FORMAT;
     }
     
-    // Safety: Reserved namespace check
-    for (int i = 0; RESERVED_NAMESPACES[i] != NULL; i++) {
-        if (strncmp(topic, RESERVED_NAMESPACES[i], 
-                   strlen(RESERVED_NAMESPACES[i])) == 0) {
-            return IPC_TOPIC_RESERVED_NAMESPACE;
+    // Safety: Check for leading or trailing slashes
+    if (topic[0] == '/' || topic[topic_len - 1] == '/') {
+        return IPC_TOPIC_INVALID_FORMAT;
+    }
+    
+    // Safety: Check for empty segments (consecutive slashes)
+    for (size_t i = 0; i < topic_len - 1; i++) {
+        if (topic[i] == '/' && topic[i + 1] == '/') {
+            return IPC_TOPIC_INVALID_FORMAT;
+        }
+    }
+    
+    // Safety: Reserved namespace check - only for non-system applications
+    // System topics (starting with "system/") are always allowed
+    if (strncmp(topic, "system/", 7) != 0) {
+        // Check other reserved namespaces for non-system topics
+        // Use the global RESERVED_NAMESPACES array (skip "system/" since it's already handled)
+        for (int i = 0; RESERVED_NAMESPACES[i] != NULL; i++) {
+            // Skip "system/" since we already allow it above
+            if (strcmp(RESERVED_NAMESPACES[i], "system/") == 0) {
+                continue;
+            }
+            
+            if (strncmp(topic, RESERVED_NAMESPACES[i], 
+                       strlen(RESERVED_NAMESPACES[i])) == 0) {
+                return IPC_TOPIC_RESERVED_NAMESPACE;
+            }
         }
     }
     

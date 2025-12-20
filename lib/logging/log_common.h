@@ -165,4 +165,88 @@ system_error_t log_config_validate(const log_config_t* config);
 system_error_t log_config_set(const log_config_t* new_config);
 system_error_t log_config_get(log_config_t* current_config);
 
+// Service communication message types (shared between client and service)
+// Use explicit uint32_t type for enum values to ensure fixed size
+typedef enum {
+    LOG_SERVICE_MSG_ENTRY = 1,        // Log entry submission
+    LOG_SERVICE_MSG_STATUS_QUERY,     // Buffer status query
+    LOG_SERVICE_MSG_RETRIEVE_LOGS,    // Log retrieval request
+    LOG_SERVICE_MSG_CLEAR_BUFFER,     // Buffer clear request
+    LOG_SERVICE_MSG_SET_LEVEL,        // Log level configuration
+} log_service_msg_type_t;
+
+// Ensure enum size is 4 bytes by using explicit type
+typedef uint32_t log_service_msg_type_fixed_t;
+
+/**
+ * @brief Service message for log entry submission
+ * 
+ * Used by client processes to submit log entries to the logger service.
+ */
+typedef struct __attribute__((packed)) {
+    log_service_msg_type_fixed_t type; // Message type: LOG_SERVICE_MSG_ENTRY (4 bytes)
+    log_entry_binary_t entry;         // Binary log entry (20 bytes)
+    uint16_t source_pid;              // Source process ID for verification (2 bytes)
+    uint8_t reserved;                 // Alignment padding (1 byte)
+    uint8_t padding;                  // Additional padding for alignment (1 byte)
+} log_service_msg_entry_t;
+
+// Static assertion to ensure fixed size (4 + 20 + 2 + 1 + 1 = 28 bytes)
+_Static_assert(sizeof(log_service_msg_entry_t) == 28, "Log entry service message must be 28 bytes");
+
+/**
+ * @brief Service message for buffer status query
+ * 
+ * Used to query the current state of the logger service buffer.
+ */
+typedef struct __attribute__((packed)) {
+    log_service_msg_type_fixed_t type; // Message type: LOG_SERVICE_MSG_STATUS_QUERY (4 bytes)
+    uint16_t requester_pid;           // PID of requesting process (2 bytes)
+    uint16_t reserved;                // Alignment padding (2 bytes)
+} log_service_msg_status_t;
+
+/**
+ * @brief Service response for buffer status
+ */
+typedef struct __attribute__((packed)) {
+    uint16_t entry_count;             // Current number of entries in buffer
+    uint16_t buffer_capacity;         // Maximum buffer capacity
+    uint32_t dropped_count;           // Number of dropped entries (L2/L3)
+    uint32_t storage_usage;           // Storage medium usage in bytes
+} log_service_response_status_t;
+
+/**
+ * @brief Service message for log retrieval
+ * 
+ * Used to retrieve log entries from the logger service.
+ */
+typedef struct __attribute__((packed)) {
+    log_service_msg_type_fixed_t type; // Message type: LOG_SERVICE_MSG_RETRIEVE_LOGS (4 bytes)
+    uint16_t requester_pid;           // PID of requesting process (2 bytes)
+    uint8_t  level_filter;            // Filter by log level (0 = all) (1 byte)
+    uint8_t  max_entries;             // Maximum entries to retrieve (0 = all) (1 byte)
+    uint32_t start_timestamp;         // Start timestamp filter (0 = from beginning) (4 bytes)
+} log_service_msg_retrieve_t;
+
+/**
+ * @brief Service response for log retrieval
+ */
+typedef struct __attribute__((packed)) {
+    uint16_t entry_count;             // Number of entries in this response (2 bytes)
+    uint16_t total_entries;           // Total entries matching filter (2 bytes)
+    log_entry_binary_t entries[16];   // Batch of log entries (16 * 20 = 320 bytes)
+} log_service_response_retrieve_t;
+
+// Static assertion for retrieve response size (2 + 2 + 320 = 324 bytes)
+_Static_assert(sizeof(log_service_response_retrieve_t) == 324, 
+               "Retrieve response size must be 324 bytes");
+
+// Service name constant
+#define LOGGER_SERVICE_NAME           "system/logger"
+
+// Service communication configuration
+#define LOG_SERVICE_DEFAULT_TIMEOUT_MS   1000     // Default communication timeout
+#define LOG_SERVICE_MAX_RETRY_COUNT       3       // Maximum retry attempts
+#define LOG_SERVICE_RETRY_DELAY_MS       50       // Delay between retries
+
 #endif // LOG_COMMON_H

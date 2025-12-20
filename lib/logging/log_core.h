@@ -36,6 +36,10 @@ system_error_t log_buffer_put_safe(log_buffer_t* buffer, const log_entry_binary_
 system_error_t log_buffer_get_safe(log_buffer_t* buffer, log_entry_binary_t* entry);
 system_error_t log_verify_entry_integrity_safe(const log_entry_binary_t* entry);
 
+// Log entry creation function
+system_error_t log_create_entry(log_entry_binary_t* entry, uint8_t level, uint8_t tag_id, 
+                               uint16_t message_id, uint32_t data1, uint32_t data2);
+
 // Original API declarations (maintained for backward compatibility)
 void log_system_init(void);
 void log_record_binary(uint8_t level, uint8_t tag_id, uint16_t message_id, uint32_t data1, uint32_t data2);
