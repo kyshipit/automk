@@ -9,9 +9,35 @@
 #include "system_errors.h"
 #include <string.h>
 #include <stdint.h>
+#include "../logging/log_client.h"  
 
 // Global error state (for error tracking and reporting)
 static system_error_t g_last_error = {0};
+
+/**
+ * @brief Log error to appropriate destination with binary logging
+ */
+void system_error_log(const system_error_t* error) {
+    if (error == NULL) {
+        return;
+    }
+    
+    // Convert error to binary log format
+    uint8_t log_level = LOG_LEVEL_ERROR;
+    if (error->severity >= ERROR_SEVERITY_HIGH) {
+        log_level = LOG_LEVEL_EMERGENCY;
+    } else if (error->severity == ERROR_SEVERITY_MEDIUM) {
+        log_level = LOG_LEVEL_ERROR;
+    } else {
+        log_level = LOG_LEVEL_INFO;
+    }
+    
+    // Send error log entry
+    log_client_send_entry(log_level, LOG_TAG_SYSTEM, 
+                         LOG_MSG_SERVICE_ERROR, 
+                         error->error_code, 
+                         error->module_id << 16 | error->category);
+}
 
 /**
  * @brief Create a system error with comprehensive context
@@ -78,22 +104,6 @@ int system_error_is_critical(const system_error_t* error) {
     
     // Non-critical errors
     return 0;
-}
-
-/**
- * @brief Log error to appropriate destination
- * 
- * @param error Pointer to error structure
- */
-void system_error_log(const system_error_t* error) {
-    if (error == NULL) {
-        return;
-    }
-    
-    // TODO: Implement error logging based on severity
-    // - Critical errors: Immediate safety handler
-    // - High errors: System log with priority
-    // - Medium/Low errors: Debug log
 }
 
 /**

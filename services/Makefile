@@ -31,7 +31,7 @@ $(SERVICE_BUILD_DIR):
 $(LOGGER_SERVICE_EXE): logger/logger_main.c $(LOGGER_SERVICE_LIB) | $(SERVICE_BUILD_DIR)
 	$(CC) $(CFLAGS) $(INCLUDES) -L$(LIB_BUILD_DIR) -o $@ logger/logger_main.c \
 	-Wl,--whole-archive -lsyscall -Wl,--no-whole-archive \
-	-llogger_service -lautolog -lipc -lsafety
+	-llogger_service -lautolog -lipc -lsafety -lbsp
 
 # Logger service library
 $(LOGGER_SERVICE_LIB): $(LOGGER_SERVICE_OBJECTS)

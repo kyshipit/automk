@@ -26,6 +26,7 @@ typedef enum {
 typedef enum {
     LOG_TAG_SYSTEM = 0,        // System-level messages
     LOG_TAG_KERNEL,            // Kernel operations
+    LOG_TAG_INTERRUPT,         // Interrupt system messages
     LOG_TAG_DRIVER_CAMERA,     // Camera driver
     LOG_TAG_DRIVER_CAN,        // CAN bus driver
     LOG_TAG_SERVICE_AI,        // AI inference service
@@ -43,10 +44,18 @@ typedef enum {
     LOG_MSG_SERVICE_ERROR,         // Service error
     LOG_MSG_DRIVER_INIT,           // Driver initialization
     LOG_MSG_DRIVER_TIMEOUT,        // Driver timeout
+    LOG_MSG_INTERRUPT_LATENCY_EXCEEDED,    // Interrupt latency exceeded
+    LOG_MSG_INVALID_INTERRUPT_NUMBER,      // Invalid interrupt number
+    LOG_MSG_INTERRUPT_STORM_DETECTED,      // Interrupt storm detected
+    LOG_MSG_TIMING_VIOLATION_DETECTED,     // Timing violation detected
+    LOG_MSG_INTERRUPT_PRIORITY_SET,        // Interrupt priority set
+    LOG_MSG_INTERRUPT_PRIORITY_MISMATCH,   // Interrupt priority mismatch
+    LOG_MSG_INTERRUPT_ENABLED,             // Interrupt enabled
     LOG_MSG_AI_INFERENCE_START,    // AI inference started
     LOG_MSG_AI_INFERENCE_RESULT,   // AI inference completed
     LOG_MSG_DIAG_MESSAGE,          // Diagnostic message
     LOG_MSG_HEARTBEAT,             // Heartbeat monitoring
+    LOG_MSG_STARTUP_PHASE,         // Startup phase transition
     LOG_MSG_COUNT                  // Maximum 65536 messages supported
 } log_message_id_t;
 

@@ -93,6 +93,10 @@ typedef enum {
     MODULE_ID_DIAGNOSTICS = 0x3000,  // Diagnostics module (0x3000-0x3FFF)
     MODULE_ID_IPC = 0x4000,          // IPC module (0x4000-0x4FFF)
     MODULE_ID_STORAGE = 0x5000,      // Storage module (0x5000-0x5FFF)
+    MODULE_ID_HW_TIMER = 0x6000,     // Hardware timer module
+    MODULE_ID_HW_WATCHDOG = 0x7000,  // Hardware watchdog module
+    MODULE_ID_INTERRUPT = 0x8000,    // Interrupt module (0x8000-0x8FFF)
+    MODULE_ID_MEMORY = 0x9000,       // Memory module (0x9000-0x9FFF)
     MODULE_ID_COUNT
 } module_id_t;
 
@@ -174,5 +178,12 @@ void system_error_reset(void);
 // Module-specific error creation macro (updated naming)
 #define MODULE_ERR_CREATE(module_err_code, severity, module_id) \
     system_error_create(module_err_code, ERROR_CATEGORY_MODULE, severity, module_id)
+
+// Memory module error codes
+#define ERR_MOD_MEM_OK                 MODULE_ERR_CODE(MODULE_ID_MEMORY, 0x00)
+#define ERR_MOD_MEM_OUT_OF_MEMORY      MODULE_ERR_CODE(MODULE_ID_MEMORY, 0x01)
+#define ERR_MOD_MEM_POOL_FULL          MODULE_ERR_CODE(MODULE_ID_MEMORY, 0x02)
+#define ERR_MOD_MEM_INVALID_POOL       MODULE_ERR_CODE(MODULE_ID_MEMORY, 0x03)
+#define ERR_MOD_MEM_CORRUPTION         MODULE_ERR_CODE(MODULE_ID_MEMORY, 0x04)
 
 #endif // SYSTEM_ERRORS_H

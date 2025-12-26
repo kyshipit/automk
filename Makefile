@@ -12,7 +12,7 @@ LIB_BUILD_DIR = $(BUILD_DIR)/lib
 SERVICE_BUILD_DIR = $(BUILD_DIR)/services
 
 # Default target - Build everything
-all: libraries services
+all: libraries kernel services
 
 # Create build directories
 $(BUILD_DIR) $(LIB_BUILD_DIR) $(SERVICE_BUILD_DIR):
@@ -43,10 +43,16 @@ run-logger: services
 	@echo "=== Starting Logger Service ==="
 	$(SERVICE_BUILD_DIR)/logger_service
 
+# Kernel building - delegate to kernel/Makefile
+kernel: libraries | $(BUILD_DIR)
+	@echo "=== Building AutoMLOS Kernel ==="
+	$(MAKE) -C kernel all
+
 # Clean all build artifacts
 clean:
 	rm -rf $(BUILD_DIR)
 	$(MAKE) -C lib clean
+	$(MAKE) -C kernel clean
 	$(MAKE) -C services clean
 	$(MAKE) -C tests clean
 

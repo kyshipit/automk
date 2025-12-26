@@ -128,4 +128,31 @@ int ipc_publisher_get_stats(ipc_publisher_t* publisher, uint32_t* message_count)
  */
 int ipc_subscriber_get_stats(ipc_subscriber_t* subscriber, uint32_t* message_count);
 
+/**
+ * @brief IPC statistics structure
+ */
+typedef struct {
+    uint64_t total_messages;        // Total messages processed
+    uint64_t total_errors;          // Total errors encountered
+    uint32_t active_publishers;     // Number of active publishers
+    uint32_t active_subscribers;    // Number of active subscribers
+    uint64_t timestamp;             // Last update timestamp
+} ipc_stats_t;
+
+/**
+ * @brief IPC configuration structure
+ */
+typedef struct {
+    size_t max_message_size;        // Maximum message size
+    size_t queue_size;              // Message queue size
+    uint32_t timeout_ms;            // Default timeout in milliseconds
+} ipc_config_t;
+
+// Additional function prototypes
+int ipc_init(void);
+void ipc_cleanup(void);
+int ipc_get_stats(ipc_stats_t* stats);
+int ipc_set_config(const ipc_config_t* config);
+int ipc_get_config(ipc_config_t* config);
+
 #endif // IPC_PUBSUB_H

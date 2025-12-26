@@ -1,6 +1,9 @@
 /**
  * @file ipc_topics.c
  * @brief IPC topic management implementation with enhanced safety
+ * 
+ * Unified topic management implementation providing comprehensive
+ * topic validation, construction, and management functionality.
  */
 
 #include "ipc_topics.h"
@@ -22,7 +25,9 @@ static const char* TOPIC_BASE_STRINGS[] = {
     [IPC_TOPIC_CATEGORY_AI] = "ai",
     [IPC_TOPIC_CATEGORY_SYSTEM] = "system",
     [IPC_TOPIC_CATEGORY_SAFETY] = "safety",
-    [IPC_TOPIC_CATEGORY_COMMUNICATION] = "communication"
+    [IPC_TOPIC_CATEGORY_COMMUNICATION] = "communication",
+    [IPC_TOPIC_CATEGORY_DIAGNOSTICS] = "diagnostics",
+    [IPC_TOPIC_CATEGORY_POWER] = "power"
 };
 
 // System subcategory strings
@@ -41,8 +46,87 @@ static const char* TOPIC_LOGGING_STRINGS[] = {
     [IPC_TOPIC_LOGGING_DEBUG] = "debug"
 };
 
+// Vehicle subcategory strings
+static const char* TOPIC_VEHICLE_STRINGS[] = {
+    [IPC_TOPIC_VEHICLE_CONTROL] = "control",
+    [IPC_TOPIC_VEHICLE_SENSOR] = "sensor",
+    [IPC_TOPIC_VEHICLE_STATUS] = "status",
+    [IPC_TOPIC_VEHICLE_COMMAND] = "command"
+};
+
+// Vision subcategory strings
+static const char* TOPIC_VISION_STRINGS[] = {
+    [IPC_TOPIC_VISION_CAMERA] = "camera",
+    [IPC_TOPIC_VISION_OBJECT] = "object",
+    [IPC_TOPIC_VISION_LANE] = "lane",
+    [IPC_TOPIC_VISION_DETECTION] = "detection"
+};
+
+// AI subcategory strings
+static const char* TOPIC_AI_STRINGS[] = {
+    [IPC_TOPIC_AI_INFERENCE] = "inference",
+    [IPC_TOPIC_AI_TRAINING] = "training",
+    [IPC_TOPIC_AI_MODEL] = "model",
+    [IPC_TOPIC_AI_RESULT] = "result"
+};
+
+// Safety subcategory strings
+static const char* TOPIC_SAFETY_STRINGS[] = {
+    [IPC_TOPIC_SAFETY_STATUS] = "status",
+    [IPC_TOPIC_SAFETY_EVENT] = "event",
+    [IPC_TOPIC_SAFETY_COMPONENT] = "component",
+    [IPC_TOPIC_SAFETY_CRITICAL] = "critical"
+};
+
+// Communication subcategory strings
+static const char* TOPIC_COMMUNICATION_STRINGS[] = {
+    [IPC_TOPIC_COMMUNICATION_CAN] = "can",
+    [IPC_TOPIC_COMMUNICATION_ETHERNET] = "ethernet",
+    [IPC_TOPIC_COMMUNICATION_WIRELESS] = "wireless",
+    [IPC_TOPIC_COMMUNICATION_PACKET] = "packet"
+};
+
+// Predefined system topics (NULL-terminated array)
+static const char* PREDEFINED_TOPICS[] = {
+    // System logging topics
+    IPC_TOPIC_SYSTEM_LOGGING_EMERGENCY,
+    IPC_TOPIC_SYSTEM_LOGGING_ERROR,
+    IPC_TOPIC_SYSTEM_LOGGING_INFO,
+    IPC_TOPIC_SYSTEM_LOGGING_DEBUG,
+    
+    // System management topics
+    IPC_TOPIC_SYSTEM_MONITOR_STATUS,
+    IPC_TOPIC_SYSTEM_DIAGNOSTIC_STATUS,
+    IPC_TOPIC_SYSTEM_POWER_STATUS,
+    
+    // Watchdog topics
+    IPC_TOPIC_SYSTEM_WATCHDOG_STATUS,
+    IPC_TOPIC_SYSTEM_WATCHDOG_EVENT,
+    IPC_TOPIC_SYSTEM_WATCHDOG_HEARTBEAT,
+    
+    // Safety topics
+    IPC_TOPIC_SAFETY_STATUS_OVERALL,
+    
+    // Vehicle topics
+    IPC_TOPIC_VEHICLE_CONTROL_COMMAND,
+    
+    // Vision topics
+    IPC_TOPIC_VISION_CAMERA_FRAME,
+    
+    // AI topics
+    IPC_TOPIC_AI_INFERENCE_RESULT,
+    
+    // Communication topics
+    IPC_TOPIC_COMMUNICATION_CAN_MSG,
+    
+    NULL  // Array terminator
+};
+
 /**
  * @brief Enhanced topic validation with comprehensive safety checks
+ * 
+ * Validates topic strings against system naming conventions with
+ * comprehensive safety checks including format, length, and namespace validation.
  */
 ipc_topic_validation_t ipc_validate_topic(const char* topic) {
     // Safety: Null pointer check
@@ -103,6 +187,9 @@ ipc_topic_validation_t ipc_validate_topic(const char* topic) {
 
 /**
  * @brief Enhanced topic construction with parameter validation
+ * 
+ * Constructs valid topic strings from category and type parameters
+ * with comprehensive parameter validation and safety checks.
  */
 const char* ipc_build_topic(ipc_topic_category_t category, 
                            ipc_topic_system_t system_type,
@@ -137,15 +224,79 @@ const char* ipc_build_topic(ipc_topic_category_t category,
                             TOPIC_LOGGING_STRINGS[logging_type]);
                     break;
                     
+                case IPC_TOPIC_SYSTEM_MONITOR:
+                    snprintf(topic_buffer, sizeof(topic_buffer), 
+                            "%s/%s/status", 
+                            TOPIC_BASE_STRINGS[category],
+                            TOPIC_SYSTEM_STRINGS[system_type]);
+                    break;
+                    
+                case IPC_TOPIC_SYSTEM_DIAGNOSTIC:
+                    snprintf(topic_buffer, sizeof(topic_buffer), 
+                            "%s/%s/status", 
+                            TOPIC_BASE_STRINGS[category],
+                            TOPIC_SYSTEM_STRINGS[system_type]);
+                    break;
+                    
+                case IPC_TOPIC_SYSTEM_POWER:
+                    snprintf(topic_buffer, sizeof(topic_buffer), 
+                            "%s/%s/status", 
+                            TOPIC_BASE_STRINGS[category],
+                            TOPIC_SYSTEM_STRINGS[system_type]);
+                    break;
+                    
                 default:
-                    // Handle other system types
-                    return NULL; // Not implemented
+                    return NULL;
             }
             break;
             
+        case IPC_TOPIC_CATEGORY_SAFETY:
+            snprintf(topic_buffer, sizeof(topic_buffer), 
+                    "%s/%s/overall", 
+                    TOPIC_BASE_STRINGS[category],
+                    TOPIC_SAFETY_STRINGS[IPC_TOPIC_SAFETY_STATUS]);
+            break;
+            
+        case IPC_TOPIC_CATEGORY_VEHICLE:
+            snprintf(topic_buffer, sizeof(topic_buffer), 
+                    "%s/%s/command", 
+                    TOPIC_BASE_STRINGS[category],
+                    TOPIC_VEHICLE_STRINGS[IPC_TOPIC_VEHICLE_CONTROL]);
+            break;
+            
+        case IPC_TOPIC_CATEGORY_VISION:
+            snprintf(topic_buffer, sizeof(topic_buffer), 
+                    "%s/%s/frame", 
+                    TOPIC_BASE_STRINGS[category],
+                    TOPIC_VISION_STRINGS[IPC_TOPIC_VISION_CAMERA]);
+            break;
+            
+        case IPC_TOPIC_CATEGORY_AI:
+            snprintf(topic_buffer, sizeof(topic_buffer), 
+                    "%s/%s/result", 
+                    TOPIC_BASE_STRINGS[category],
+                    TOPIC_AI_STRINGS[IPC_TOPIC_AI_INFERENCE]);
+            break;
+            
+        case IPC_TOPIC_CATEGORY_COMMUNICATION:
+            snprintf(topic_buffer, sizeof(topic_buffer), 
+                    "%s/%s/message", 
+                    TOPIC_BASE_STRINGS[category],
+                    TOPIC_COMMUNICATION_STRINGS[IPC_TOPIC_COMMUNICATION_CAN]);
+            break;
+            
+        case IPC_TOPIC_CATEGORY_DIAGNOSTICS:
+            snprintf(topic_buffer, sizeof(topic_buffer), 
+                    "%s/status/overall", TOPIC_BASE_STRINGS[category]);
+            break;
+            
+        case IPC_TOPIC_CATEGORY_POWER:
+            snprintf(topic_buffer, sizeof(topic_buffer), 
+                    "%s/status/overall", TOPIC_BASE_STRINGS[category]);
+            break;
+            
         default:
-            // Handle other categories
-            return NULL; // Not implemented
+            return NULL;
     }
     
     // Final validation
@@ -154,4 +305,82 @@ const char* ipc_build_topic(ipc_topic_category_t category,
     }
     
     return topic_buffer;
+}
+
+/**
+ * @brief Get all predefined system topics
+ * 
+ * Returns a NULL-terminated array containing all predefined system topics
+ * that should be registered during IPC initialization.
+ */
+const char** ipc_get_predefined_topics(void) {
+    return (const char**)PREDEFINED_TOPICS;
+}
+
+/**
+ * @brief Check if a topic is predefined
+ * 
+ * Determines if a topic is part of the predefined system topics
+ * by comparing against the predefined topics array.
+ */
+bool ipc_is_predefined_topic(const char* topic) {
+    if (topic == NULL) {
+        return false;
+    }
+    
+    for (int i = 0; PREDEFINED_TOPICS[i] != NULL; i++) {
+        if (strcmp(topic, PREDEFINED_TOPICS[i]) == 0) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * @brief Get topic category from string
+ * 
+ * Extracts the category from a topic string by parsing the first segment.
+ */
+ipc_topic_category_t ipc_get_topic_category(const char* topic) {
+    if (topic == NULL) {
+        return IPC_TOPIC_CATEGORY_COUNT;
+    }
+    
+    // Extract first segment (before first slash)
+    char category_str[32] = {0};
+    const char* slash_pos = strchr(topic, '/');
+    if (slash_pos == NULL) {
+        return IPC_TOPIC_CATEGORY_COUNT;
+    }
+    
+    size_t category_len = slash_pos - topic;
+    if (category_len >= sizeof(category_str)) {
+        return IPC_TOPIC_CATEGORY_COUNT;
+    }
+    
+    strncpy(category_str, topic, category_len);
+    category_str[category_len] = '\0';
+    
+    // Compare against known categories
+    for (int i = 0; i < IPC_TOPIC_CATEGORY_COUNT; i++) {
+        if (TOPIC_BASE_STRINGS[i] != NULL && 
+            strcmp(category_str, TOPIC_BASE_STRINGS[i]) == 0) {
+            return (ipc_topic_category_t)i;
+        }
+    }
+    
+    return IPC_TOPIC_CATEGORY_COUNT;
+}
+
+// Placeholder for future implementation
+bool ipc_parse_topic(const char* topic, ipc_topic_category_t* category,
+                    ipc_topic_system_t* system_type, 
+                    ipc_topic_logging_t* logging_type) {
+    // TODO: Implement topic parsing functionality
+    (void)topic;
+    (void)category;
+    (void)system_type;
+    (void)logging_type;
+    return false;
 }
