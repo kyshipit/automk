@@ -1,11 +1,6 @@
 
 # AutoMicroKernel - Automotive-Grade Safety Microkernel
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![AUTOSAR](https://img.shields.io/badge/AUTOSAR-CP_R22.11-green.svg)](https://www.autosar.org/)
-[![Safety](https://img.shields.io/badge/ISO_26262-ASIL_B%2FC-red.svg)](docs/safety/)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](scripts/ci/)
-
 ## Project Overview
 
 **Automotive-grade real-time microkernel operating system** for intelligent vehicles, deeply integrated with TinyML inference capabilities:
@@ -68,34 +63,6 @@ autoMLOS/
 └── scripts/               # Build scripts
 ```
 
-## Quick Start
-
-### 1. Environment Preparation
-
-### 2. Build Project
-
-### 3. System Configuration
-
-## ML Scheduler and Testing
-
-## Documentation Index
-
-- [Architecture Design](docs/architecture.md) - System architecture and module interaction description
-- [API Reference](docs/api/kernel_api.md) - Complete API documentation
-- [Porting Guide](docs/porting_guide.md) - New platform porting
-- [Diagnostic Protocol](docs/diagnostic.md) - UDS/DoIP diagnostic protocol implementation
-- [Error Handling](docs/safety.md) - Error reporting and fault management guide
-- [Performance Test Report](docs/test/test_report.md) - Unit/integration testing
-- [Adapter Build](docs/adapter_build.md) - Adaptation layer build and running examples
-- [Logging System](docs/logger.md) - Unified logging interface and backend description
-
-## Contribution Guidelines
-
-Welcome to submit Issues and Pull Requests! Please follow:
-
-1. **Code Style**: MISRA C:2012 + AUTOSAR C++14
-2. **Testing Requirements**: New features must include unit tests
-
 ## License
 
-## Contact Information
+MIT License
